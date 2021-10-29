@@ -1,3 +1,4 @@
+import java.lang.Thread.interrupted
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 import scala.io.StdIn
 import scala.util.Random
@@ -27,22 +28,20 @@ object Main1 extends App {
 
   val consoleSynchronisation: Array[Int] = Array(1)
 
-  for (i <- 0 to consumersNumber) new Thread(new Consumer(buffer, consoleSynchronisation)).start();
-  for (i <- 0 to producersNumber) new Thread(new Producer(buffer, strings, consoleSynchronisation)).start();
+  for (i <- 0 to consumersNumber) new Thread(new Consumer(buffer)).start();
+  for (i <- 0 to producersNumber) new Thread(new Producer(buffer, strings)).start();
 
 }
 
-class Consumer(var buffer: BlockingQueue[String], val consoleSynchronisation: AnyRef) extends Runnable {
+class Consumer(var buffer: BlockingQueue[String]) extends Runnable {
   override def run(): Unit = {
     val random: Random = new Random()
 
-    while (true) {
+    while (!interrupted()) {
       buffer.take();
 
-      consoleSynchronisation.synchronized {
-        print("taking element, size: ")
-        println(buffer.size())
-      }
+      val collectionSize = buffer.size()
+      println(s"taking element, size: $collectionSize")
 
       Thread.sleep(random.nextInt(2000))
     }
@@ -50,18 +49,16 @@ class Consumer(var buffer: BlockingQueue[String], val consoleSynchronisation: An
   }
 }
 
-class Producer(var buffer: BlockingQueue[String], val strings: Array[String], val consoleSynchronisation: AnyRef) extends Runnable {
+class Producer(var buffer: BlockingQueue[String], val strings: Array[String]) extends Runnable {
 
   override def run(): Unit = {
     val random: Random = new Random()
-    while (true) {
+    while (!interrupted()) {
 
       buffer.put(strings(random.nextInt(strings.length)))
-      consoleSynchronisation.synchronized {
-        print("putting element, size: ")
-        println(buffer.size())
-      }
 
+      val collectionSize = buffer.size()
+      println(s"putting element, size: $collectionSize")
 
       Thread.sleep(random.nextInt(2000))
 
