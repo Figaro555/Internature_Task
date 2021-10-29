@@ -1,11 +1,17 @@
+import Cache.cache
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 
 import java.lang.Thread.interrupted
 import scala.collection.mutable
 import scala.util.Random
 
+
+object Cache {
+  val cache: mutable.Map[String, Byte] = new mutable.HashMap[String, Byte];
+}
+
 object Main1 extends App {
-  var cache: mutable.Map[String, Byte] = new mutable.HashMap[String, Byte];
+
   cache.put("name", 0)
   cache.put("photos", 0)
   cache.put("users", 0)
@@ -15,12 +21,10 @@ object Main1 extends App {
   val editActorsAmount = 5
   val system = ActorSystem("MySystem")
 
-  var actor: ActorRef = system.actorOf(Props(new CacheEditor1(cache)), "MyActor")
-
-  for (i <- (0 to editActorsAmount)) (new Thread(new MassageEmulator(system.actorOf(Props(new CacheEditor1(cache)), "MyActor" + i), cache.keySet.toList))).start();
+  for (i <- 0 to editActorsAmount) (new Thread(new MassageEmulator(system.actorOf(Props(new CacheEditor1()), "MyActor" + i)))).start();
 }
 
-class CacheEditor1(var cache: mutable.Map[String, Byte]) extends Actor {
+class CacheEditor1() extends Actor {
 
   override def receive = {
     case key: String => {
@@ -41,8 +45,10 @@ class CacheEditor1(var cache: mutable.Map[String, Byte]) extends Actor {
 }
 
 
-class MassageEmulator(sendTo: ActorRef, val values: List[String]) extends Runnable {
+class MassageEmulator(sendTo: ActorRef) extends Runnable {
   override def run(): Unit = {
+
+    val values: List[String] = cache.keySet.toList
 
     val random: Random = new Random();
     val actorName: String = sendTo.path.name
